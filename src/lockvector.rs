@@ -73,7 +73,9 @@ where
 
     pub fn addat(&self, index: usize, val: T) {
         let list = &mut self.list.lock().unwrap();
-        list[index] += val;
+        if index < list.len(){
+            list[index] += val;
+        }
 
     }
 
