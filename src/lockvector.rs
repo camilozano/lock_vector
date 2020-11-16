@@ -1,20 +1,20 @@
-use std::sync::{Arc, Mutex};
-use std::thread;
-//use std::thread;
+use std::sync::Mutex;
+use std::sync::atomic::AtomicUsize;
+use std::ops::{Add, AddAssign};
 #[derive(Debug)]
-pub struct LockVector<T: Copy> {
+pub struct LockVector<T: Copy + Eq + Add + AddAssign> {
     pub list: Mutex<Vec<T>>,
-    size: Mutex<usize>
+    size: AtomicUsize,
 }
 
 impl <T> LockVector<T> 
 where 
-    T: Copy,
+    T: Copy + Eq + Add + AddAssign
 {
     pub fn new(size: usize) -> Self {
         LockVector {
             list: Mutex::new(Vec::with_capacity(size)),
-            size: Mutex::new(size),
+            size: AtomicUsize::new(size),
         }
     }
     pub fn at(&self, index: usize) -> Option<T>{
@@ -48,11 +48,34 @@ where
         None
     }
 
+    pub fn insertat(&self, value: T, index: usize){
+        let list = &mut self.list.lock().unwrap();
+        if index < list.len() {
+            list.insert(index, value);
+        }
+    }
+
+    pub fn cwrite(&self, index: usize, old_value: T, new_value: T) -> bool{
+        let list = &mut self.list.lock().unwrap();
+        if index < list.len() {
+            if old_value != new_value {
+                list[index] = new_value;
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn size(&self) -> usize {
         let list = &mut self.list.lock().unwrap();
         list.len()
     }
 
+    pub fn addat(&self, index: usize, val: T) {
+        let list = &mut self.list.lock().unwrap();
+        list[index] += val;
+
+    }
 
 
 }
